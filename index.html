@@ -326,7 +326,7 @@
   </nav>
 
   <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz7oU6nbUiSTkG8lqSvPjNAVQrpIH1mZGzC55yangimQKKlXFmYkea16Tem5dY_nlBq1w/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxsiQm9mqGrO03J8UEFGqxbucrJD_BtLUqLUz4fPeL8plZcvUrhBDDLl8OzSt6Nv9NM9Q/exec';
 
     let currentAssets = [];
     let currentExpenses = [];
@@ -505,11 +505,17 @@
 
       const isFromPnl = currentPnls.includes(from);
       const isToPnl = currentPnls.includes(to);
+      
+      // 損益科目関連の判定（例: 資産 -> 損益科目 は減少、損益科目 -> 資産 は増加）
       if (isToPnl && isFromAsset) return 'decrease';
       if (isFromPnl && isToAsset) return 'increase';
 
       if (isFromAsset && !isToAsset) return 'decrease';
       if (!isFromAsset && isToAsset) return 'increase';
+
+      // 損益科目同士やその他
+      if (isFromPnl) return 'decrease';
+      if (isToPnl) return 'increase';
 
       return 'decrease';
     }
@@ -819,11 +825,13 @@
       monthHistory.forEach(item => {
         const tType = getTransactionType(item.from, item.to);
         if (tType === 'decrease') {
-          const cat = currentExpenses.includes(item.to) || currentPnls.includes(item.to) ? item.to : item.from;
+          // 支出または損益科目（費用の発生など）
+          const cat = currentExpenses.includes(item.to) || currentPnls.includes(item.to) ? item.to : (currentPnls.includes(item.from) ? item.from : item.to);
           expenseMap[cat] = (expenseMap[cat] || 0) + item.amount;
           totalExpense += item.amount;
         } else if (tType === 'increase') {
-          const cat = currentIncomes.includes(item.from) || currentPnls.includes(item.from) ? item.from : item.to;
+          // 収入または損益科目（収益の発生など）
+          const cat = currentIncomes.includes(item.from) || currentPnls.includes(item.from) ? item.from : (currentPnls.includes(item.to) ? item.to : item.from);
           incomeMap[cat] = (incomeMap[cat] || 0) + item.amount;
           totalIncome += item.amount;
         }
