@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>家計簿アプリ</title>
+  <!-- ホーム画面に追加した際のおしゃれなアイコン設定 -->
+  <link rel="apple-touch-icon" href="https://i.pinimg.com/736x/78/05/b0/7805b0b4c804ad7334e1d0d9e6d02842.jpg">
   <style>
     :root {
       --primary-color: #7c73e6;
@@ -29,6 +31,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.03);
       margin-bottom: 16px;
       margin-top: 10px;
+      overflow: hidden; /* はみ出し防止用に追加 */
     }
     .input-group { margin-bottom: 14px; }
     .input-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
@@ -167,7 +170,7 @@
     </div>
   </div>
 
-  <!-- 2. データ画面 (3つのサブタブに変更) -->
+  <!-- 2. データ画面 (3つのサブタブ) -->
   <div id="view-data" class="view">
     <div class="sub-tabs">
       <button class="sub-tab-btn active" onclick="switchSubTab('calendar')">カレンダー</button>
@@ -237,7 +240,7 @@
       </div>
     </div>
 
-    <!-- 科目表示ビュー（新規追加） -->
+    <!-- 科目表示ビュー -->
     <div id="sub-category" class="sub-view" style="display: none;">
       <div class="card" style="padding: 12px; display: flex; justify-content: space-between; align-items: center;">
         <button onclick="changeCatViewMonth(-1)" style="background:none; border:none; font-size:18px; color:var(--primary-color); cursor:pointer; padding:4px 10px;">&#9664;</button>
@@ -303,7 +306,7 @@
   </nav>
 
   <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz7oU6nbUiSTkG8lqSvPjNAVQrpIH1mZGzC55yangimQKKlXFmYkea16Tem5dY_nlBq1w/exec';
+    const GAS_URL = 'YOUR_GAS_WEB_APP_URL';
 
     let currentAssets = [];
     let currentExpenses = [];
@@ -579,7 +582,7 @@
         li.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
             <div>
-              <div style="font-weight:bold;">${item.from} ➔ ${item.to}</div>
+              <div style="font-weight:bold;">${item.from} ➔${item.to}</div>
               <div style="font-size:11px; color:var(--text-sub);">${item.memo || 'メモなし'}</div>
             </div>
             <div class="daily-actions">
@@ -595,7 +598,6 @@
       listContainer.appendChild(ul);
     }
 
-    // --- 科目別詳細ビューの描画処理 ---
     function renderCategoryDetailView() {
       document.getElementById('catViewTitle').innerText = `${catViewYear}年${catViewMonth + 1}月`;
       const select = document.getElementById('targetCatSelect');
@@ -621,7 +623,6 @@
       const monthPrefix = `${catViewYear}/${String(catViewMonth + 1).padStart(2, '0')}`;
 
       if (isAsset) {
-        // 資産科目の場合：現在残高 ＆ 先月からの増減 ＆ 今月の当該科目関連の履歴
         let currentBalance = 0;
         let prevBalance = 0;
 
@@ -649,7 +650,7 @@
           changeClass = 'text-red';
         }
 
-	const summaryBox = document.createElement('div');
+        const summaryBox = document.createElement('div');
         summaryBox.style.display = 'flex';
         summaryBox.style.gap = '10px';
         summaryBox.style.marginBottom = '14px';
@@ -669,11 +670,9 @@
         `;
         contentContainer.appendChild(summaryBox);
 
-        // 今月のこの資産に関する明細
         renderCatHistoryList(selectedCat, monthPrefix, contentContainer);
 
       } else {
-        // 消費または収入科目の場合：今月の合計金額 ＆ 今月の明細
         let monthTotal = 0;
         const monthItems = allHistory.filter(item => {
           if (!item.date || !item.date.startsWith(monthPrefix)) return false;
@@ -744,7 +743,7 @@
         li.className = 'daily-item';
         li.innerHTML = `
           <div>
-            <div style="font-weight:bold; font-size:12px;">${item.date} : ${item.from} ➔ ${item.to}</div>
+            <div style="font-weight:bold; font-size:12px;">${item.date} : ${item.from} ➔${item.to}</div>
             <div style="font-size:11px; color:var(--text-sub);">${item.memo || 'メモなし'}</div>
           </div>
           <div style="font-weight:bold; font-size:13px;" class="${amtColor}">${amtStr}</div>
@@ -754,7 +753,6 @@
       container.appendChild(ul);
     }
 
-    // グラフおよび合計の描画処理
     const palette = ['#7c73e6', '#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5', '#dd6b20', '#00b5d8', '#718096'];
 
     function renderGraphs() {
@@ -924,9 +922,11 @@
     }
 
     function deleteCategory(name, type) {
-      if (!confirm(`「${name}」を削除しますか？`)) return;
+      if (!confirm(`` + name + `を削除しますか？`)) return;
       postData({ action: 'deleteCategory', name, type });
     }
+
+    function showSaveControl() {}
 
     function showSaveConfirm() {
       const errorEl = document.getElementById('formError');
@@ -983,7 +983,7 @@
 
       postData(payload);
       
-      document.getElementById('amount').value = '';
+      document.getElementById('amount').value,  document.getElementById('amount').value = '';
       document.getElementById('memo').value = '';
       document.getElementById('saveConfirmCard').style.display = 'none';
       
