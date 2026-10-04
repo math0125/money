@@ -100,14 +100,18 @@
     }
 
     .summary-box { display: flex; gap: 8px; margin-bottom: 14px; width: 100%; }
-    .summary-card { flex: 1; background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 12px; padding: 8px; text-align: center; min-width: 0; }
+    .summary-card { 
+      flex: 1; background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 12px; padding: 10px 8px; text-align: center; min-width: 0; 
+      cursor: pointer; transition: all 0.2s; 
+    }
+    .summary-card.active-card { background: #f0ebff; border-color: var(--primary-color); box-shadow: 0 2px 6px rgba(124, 115, 230, 0.2); }
     .summary-card .label { font-size: 11px; color: var(--text-sub); margin-bottom: 2px; }
     .summary-card .value { font-size: 14px; font-weight: bold; word-break: break-all; }
 
     .graph-container { display: flex; flex-direction: column; align-items: center; padding: 10px 0; width: 100%; }
     .graph-canvas-box { position: relative; width: 180px; height: 180px; margin-bottom: 14px; }
     .graph-legend { width: 100%; font-size: 12px; }
-    .legend-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 6px 8px; background: #fafbfc; border-radius: 6px; border: 1px solid #f0f2f5; gap: 6px; }
+    .legend-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 8px 10px; background: #fafbfc; border-radius: 8px; border: 1px solid #f0f2f5; gap: 6px; }
     .legend-color { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; margin-right: 4px; }
 
     .cat-item {
@@ -178,7 +182,7 @@
     <div class="sub-tabs">
       <button class="sub-tab-btn active" onclick="switchSubTab('calendar')">カレンダー</button>
       <button class="sub-tab-btn" onclick="switchSubTab('graph')">グラフ</button>
-      <button class="sub-tab-btn" onclick="switchSubTab('category')">科目表示</button>
+      <button class="sub-tab-btn" onclick="switchSubTab('category')">内訳</button>
     </div>
 
     <!-- カレンダービュー -->
@@ -210,39 +214,52 @@
         <button onclick="changeGraphMonth(1)" style="background:none; border:none; font-size:18px; color:var(--primary-color); cursor:pointer; padding:4px 10px;">&#9654;</button>
       </div>
 
+      <!-- 支出・収入切り替えカード -->
       <div class="summary-box">
-        <div class="summary-card">
+        <div class="summary-card active-card" id="cardTabExpense" onclick="switchGraphTab('expense')">
           <div class="label">今月支出合計</div>
           <div class="value text-red" id="totalExpenseVal">¥0</div>
         </div>
-        <div class="summary-card">
+        <div class="summary-card" id="cardTabIncome" onclick="switchGraphTab('income')">
           <div class="label">今月収入合計</div>
           <div class="value text-blue" id="totalIncomeVal">¥0</div>
         </div>
       </div>
 
-      <div class="card">
-        <h3 style="font-size: 15px; margin-bottom: 12px; text-align: center; color: var(--color-red);">支出の内訳</h3>
-        <div class="graph-container">
-          <div class="graph-canvas-box">
-            <canvas id="expenseCanvas" width="180" height="180" style="width:100%; height:100%;"></canvas>
+      <!-- 支出セクション -->
+      <div id="graphSectionExpense">
+        <div class="card">
+          <h3 style="font-size: 15px; margin-bottom: 12px; text-align: center; color: var(--color-red);">支出の内訳グラフ</h3>
+          <div class="graph-container">
+            <div class="graph-canvas-box">
+              <canvas id="expenseCanvas" width="180" height="180" style="width:100%; height:100%;"></canvas>
+            </div>
           </div>
+        </div>
+        <div class="card">
+          <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--color-red);">支出の内訳リスト</h3>
           <div class="graph-legend" id="expenseLegend"></div>
         </div>
       </div>
 
-      <div class="card">
-        <h3 style="font-size: 15px; margin-bottom: 12px; text-align: center; color: var(--color-blue);">収入の内訳</h3>
-        <div class="graph-container">
-          <div class="graph-canvas-box">
-            <canvas id="incomeCanvas" width="180" height="180" style="width:100%; height:100%;"></canvas>
+      <!-- 収入セクション -->
+      <div id="graphSectionIncome" style="display: none;">
+        <div class="card">
+          <h3 style="font-size: 15px; margin-bottom: 12px; text-align: center; color: var(--color-blue);">収入の内訳グラフ</h3>
+          <div class="graph-container">
+            <div class="graph-canvas-box">
+              <canvas id="incomeCanvas" width="180" height="180" style="width:100%; height:100%;"></canvas>
+            </div>
           </div>
+        </div>
+        <div class="card">
+          <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--color-blue);">収入の内訳リスト</h3>
           <div class="graph-legend" id="incomeLegend"></div>
         </div>
       </div>
     </div>
 
-    <!-- 科目表示ビュー -->
+    <!-- 内訳（科目表示）ビュー -->
     <div id="sub-category" class="sub-view" style="display: none;">
       <div class="card" style="padding: 12px; display: flex; justify-content: space-between; align-items: center;">
         <button onclick="changeCatViewMonth(-1)" style="background:none; border:none; font-size:18px; color:var(--primary-color); cursor:pointer; padding:4px 10px;">&#9664;</button>
@@ -278,8 +295,9 @@
         <label>種類</label>
         <select id="newCatType">
           <option value="asset">資産科目</option>
-          <option value="expense">消費科目</option>
+          <option value="expense">支出科目</option>
           <option value="income">収入科目</option>
+          <option value="pnl">損益科目</option>
         </select>
       </div>
       <button type="button" class="btn-primary" onclick="addCategory()">追加する</button>
@@ -302,7 +320,7 @@
       <div>データ</div>
     </button>
     <button class="nav-item" onclick="switchView('settings')">
-      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.47l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c-.24 0 .44-.17.47-.47l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.47l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c-.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c-.24 0 .44-.17.47-.47l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
       <div>設定</div>
     </button>
   </nav>
@@ -313,6 +331,7 @@
     let currentAssets = [];
     let currentExpenses = [];
     let currentIncomes = [];
+    let currentPnls = [];
     let allHistory = [];
 
     let viewYear = new Date().getFullYear();
@@ -321,6 +340,7 @@
 
     let graphYear = new Date().getFullYear();
     let graphMonth = new Date().getMonth();
+    let activeGraphTab = 'expense';
 
     let catViewYear = new Date().getFullYear();
     let catViewMonth = new Date().getMonth();
@@ -367,6 +387,26 @@
       }
     }
 
+    function switchGraphTab(tab) {
+      activeGraphTab = tab;
+      const cardExp = document.getElementById('cardTabExpense');
+      const cardInc = document.getElementById('cardTabIncome');
+      const secExp = document.getElementById('graphSectionExpense');
+      const secInc = document.getElementById('graphSectionIncome');
+
+      if (tab === 'expense') {
+        cardExp.classList.add('active-card');
+        cardInc.classList.remove('active-card');
+        secExp.style.display = 'block';
+        secInc.style.display = 'none';
+      } else {
+        cardInc.classList.add('active-card');
+        cardExp.classList.remove('active-card');
+        secInc.style.display = 'block';
+        secExp.style.display = 'none';
+      }
+    }
+
     async function loadAllData() {
       try {
         const res = await fetch(GAS_URL);
@@ -374,6 +414,7 @@
         currentAssets = data.assets || [];
         currentExpenses = data.expenses || [];
         currentIncomes = data.incomes || [];
+        currentPnls = data.pnl || data.pnls || [];
         allHistory = data.history || [];
 
         renderSelects();
@@ -393,18 +434,15 @@
       fromSelect.innerHTML = '';
       toSelect.innerHTML = '';
 
-      const fromItems = [...currentAssets, ...currentExpenses];
-      fromItems.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name; opt.innerText = name;
-        fromSelect.appendChild(opt);
-      });
+      const allItems = [...currentAssets, ...currentExpenses, ...currentIncomes, ...currentPnls];
+      allItems.forEach(name => {
+        const opt1 = document.createElement('option');
+        opt1.value = name; opt1.innerText = name;
+        fromSelect.appendChild(opt1);
 
-      const toItems = [...currentAssets, ...currentExpenses, ...currentIncomes];
-      toItems.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name; opt.innerText = name;
-        toSelect.appendChild(opt);
+        const opt2 = document.createElement('option');
+        opt2.value = name; opt2.innerText = name;
+        toSelect.appendChild(opt2);
       });
     }
 
@@ -415,8 +453,9 @@
 
       const groups = [
         { label: '--- 資産科目 ---', items: currentAssets },
-        { label: '--- 消費科目 ---', items: currentExpenses },
-        { label: '--- 収入科目 ---', items: currentIncomes }
+        { label: '--- 支出科目 ---', items: currentExpenses },
+        { label: '--- 収入科目 ---', items: currentIncomes },
+        { label: '--- 損益科目 ---', items: currentPnls }
       ];
 
       groups.forEach(g => {
@@ -463,8 +502,15 @@
       const isToAsset = currentAssets.includes(to);
 
       if (isFromAsset && isToAsset) return 'transfer';
-      else if (isFromAsset && !isToAsset) return 'decrease';
-      else if (!isFromAsset && isToAsset) return 'increase';
+
+      const isFromPnl = currentPnls.includes(from);
+      const isToPnl = currentPnls.includes(to);
+      if (isToPnl && isFromAsset) return 'decrease';
+      if (isFromPnl && isToAsset) return 'increase';
+
+      if (isFromAsset && !isToAsset) return 'decrease';
+      if (!isFromAsset && isToAsset) return 'increase';
+
       return 'decrease';
     }
 
@@ -532,7 +578,6 @@
       const summary = summaryMap[dateKey];
       let summaryHtml = '';
       if (summary) {
-        // カレンダー内：プラスマイナス・円マークなし、色（赤・青）のみで区別
         if (summary.increase > 0) {
           summaryHtml += `<div class="cal-cell-summary text-blue">${summary.increase.toLocaleString()}</div>`;
         }
@@ -620,6 +665,7 @@
       const isAsset = currentAssets.includes(selectedCat);
       const isExpense = currentExpenses.includes(selectedCat);
       const isIncome = currentIncomes.includes(selectedCat);
+      const isPnl = currentPnls.includes(selectedCat);
 
       const targetDateEnd = new Date(catViewYear, catViewMonth + 1, 0);
       const prevMonthEndDate = new Date(catViewYear, catViewMonth, 0);
@@ -673,14 +719,15 @@
           </div>
         `;
         contentContainer.appendChild(summaryBox);
-
         renderCatHistoryList(selectedCat, monthPrefix, contentContainer);
 
       } else {
         let monthTotal = 0;
         const monthItems = allHistory.filter(item => {
           if (!item.date || !item.date.startsWith(monthPrefix)) return false;
-          if (isExpense) {
+          if (isPnl) {
+            return item.from === selectedCat || item.to === selectedCat;
+          } else if (isExpense) {
             return (currentExpenses.includes(item.to) && item.to === selectedCat) || 
                    (!currentAssets.includes(item.from) && item.from === selectedCat);
           } else if (isIncome) {
@@ -691,8 +738,8 @@
 
         monthItems.forEach(item => monthTotal += item.amount);
 
-        let colorClass = isExpense ? 'text-red' : 'text-blue';
-        let labelName = isExpense ? '今月支出合計' : '今月収入合計';
+        let colorClass = isExpense || isPnl ? 'text-red' : 'text-blue';
+        let labelName = isExpense ? '今月支出合計' : (isPnl ? '今月合計' : '今月収入合計');
 
         const summaryBox = document.createElement('div');
         summaryBox.className = 'summary-card';
@@ -702,7 +749,6 @@
           <div class="value ${colorClass}">¥${monthTotal.toLocaleString()}</div>
         `;
         contentContainer.appendChild(summaryBox);
-
         renderCatHistoryList(selectedCat, monthPrefix, contentContainer);
       }
     }
@@ -773,11 +819,11 @@
       monthHistory.forEach(item => {
         const tType = getTransactionType(item.from, item.to);
         if (tType === 'decrease') {
-          const cat = currentExpenses.includes(item.to) ? item.to : item.from;
+          const cat = currentExpenses.includes(item.to) || currentPnls.includes(item.to) ? item.to : item.from;
           expenseMap[cat] = (expenseMap[cat] || 0) + item.amount;
           totalExpense += item.amount;
         } else if (tType === 'increase') {
-          const cat = currentIncomes.includes(item.to) ? item.to : item.to;
+          const cat = currentIncomes.includes(item.from) || currentPnls.includes(item.from) ? item.from : item.to;
           incomeMap[cat] = (incomeMap[cat] || 0) + item.amount;
           totalIncome += item.amount;
         }
@@ -886,8 +932,9 @@
       const list = document.getElementById('categoryList');
       list.innerHTML = '';
       currentAssets.forEach(name => list.appendChild(createCatRow(name, 'asset', '資産')));
-      currentExpenses.forEach(name => list.appendChild(createCatRow(name, 'expense', '消費')));
+      currentExpenses.forEach(name => list.appendChild(createCatRow(name, 'expense', '支出')));
       currentIncomes.forEach(name => list.appendChild(createCatRow(name, 'income', '収入')));
+      currentPnls.forEach(name => list.appendChild(createCatRow(name, 'pnl', '損益')));
     }
 
     function createCatRow(name, type, label) {
