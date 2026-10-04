@@ -31,12 +31,11 @@
       margin-bottom: 14px;
       margin-top: 10px;
       width: 100%;
-      overflow: hidden; /* はみ出しをここで完全にブロック */
+      overflow: hidden;
     }
     .input-group { margin-bottom: 12px; width: 100%; }
     .input-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
     
-    /* 入力欄やセレクトボックスが絶対にはみ出さないよう調整 */
     .input-group input, .input-group select {
       width: 100%; 
       max-width: 100%; 
@@ -46,7 +45,7 @@
       font-size: 16px; 
       background: #fafbfc; 
       outline: none;
-      -webkit-appearance: none; /* iPhoneでの独自の膨らみを防止 */
+      -webkit-appearance: none;
       appearance: none;
     }
     .input-group input:focus, .input-group select:focus { border-color: var(--primary-color); background: #fff; }
@@ -533,11 +532,12 @@
       const summary = summaryMap[dateKey];
       let summaryHtml = '';
       if (summary) {
+        // カレンダー内：プラスマイナス・円マークなし、色（赤・青）のみで区別
         if (summary.increase > 0) {
-          summaryHtml += `<div class="cal-cell-summary text-blue">+¥${summary.increase.toLocaleString()}</div>`;
+          summaryHtml += `<div class="cal-cell-summary text-blue">${summary.increase.toLocaleString()}</div>`;
         }
         if (summary.decrease > 0) {
-          summaryHtml += `<div class="cal-cell-summary text-red">-¥${summary.decrease.toLocaleString()}</div>`;
+          summaryHtml += `<div class="cal-cell-summary text-red">${summary.decrease.toLocaleString()}</div>`;
         }
       }
 
