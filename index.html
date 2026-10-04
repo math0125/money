@@ -214,6 +214,11 @@
         <button onclick="changeGraphMonth(1)" style="background:none; border:none; font-size:18px; color:var(--primary-color); cursor:pointer; padding:4px 10px;">&#9654;</button>
       </div>
 
+	<div class="card" style="margin-bottom: 10px; padding: 12px; text-align: center;">
+        <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 2px;">今月収支</div>
+        <div id="netBalanceVal" style="font-size: 18px; font-weight: bold; word-break: break-all;">¥0</div>
+      </div>
+
       <!-- 支出・収入切り替えカード -->
       <div class="summary-box">
         <div class="summary-card active-card" id="cardTabExpense" onclick="switchGraphTab('expense')">
@@ -874,7 +879,7 @@ function renderCatHistoryList(selectedCat, monthPrefix, container) {
 
     const palette = ['#7c73e6', '#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5', '#dd6b20', '#00b5d8', '#718096'];
 
-    function renderGraphs() {
+function renderGraphs() {
       document.getElementById('graphTitle').innerText = `${graphYear}年${graphMonth + 1}月`;
 
       const monthPrefix = `${graphYear}/${String(graphMonth + 1).padStart(2, '0')}`;
@@ -934,6 +939,21 @@ function renderCatHistoryList(selectedCat, monthPrefix, container) {
 
       document.getElementById('totalExpenseVal').innerText = `¥${totalExpense.toLocaleString()}`;
       document.getElementById('totalIncomeVal').innerText = `¥${totalIncome.toLocaleString()}`;
+
+      // --- 今月収支の計算・表示処理 ---
+      const netBalance = totalIncome - totalExpense;
+      const netEl = document.getElementById('netBalanceVal');
+
+      if (netBalance > 0) {
+        netEl.className = 'text-blue';
+        netEl.innerText = `+¥${netBalance.toLocaleString()}`;
+      } else if (netBalance < 0) {
+        netEl.className = 'text-red';
+        netEl.innerText = `-¥${Math.abs(netBalance).toLocaleString()}`;
+      } else {
+        netEl.className = 'text-black';
+        netEl.innerText = `¥0`;
+      }
 
       drawPieChart('expenseCanvas', 'expenseLegend', expenseMap);
       drawPieChart('incomeCanvas', 'incomeLegend', incomeMap);
