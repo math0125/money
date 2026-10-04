@@ -101,12 +101,12 @@
 
     .summary-box { display: flex; gap: 8px; margin-bottom: 14px; width: 100%; }
     .summary-card { 
-      flex: 1; background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 12px; padding: 10px 8px; text-align: center; min-width: 0; 
+      flex: 1; background: #fafbfc; border: 1px solid #e1e4e8; border-radius: 12px; padding: 10px 6px; text-align: center; min-width: 0; 
       cursor: pointer; transition: all 0.2s; 
     }
     .summary-card.active-card { background: #f0ebff; border-color: var(--primary-color); box-shadow: 0 2px 6px rgba(124, 115, 230, 0.2); }
     .summary-card .label { font-size: 11px; color: var(--text-sub); margin-bottom: 2px; }
-    .summary-card .value { font-size: 14px; font-weight: bold; word-break: break-all; }
+    .summary-card .value { font-size: 13px; font-weight: bold; word-break: break-all; }
 
     .graph-container { display: flex; flex-direction: column; align-items: center; padding: 10px 0; width: 100%; }
     .graph-canvas-box { position: relative; width: 180px; height: 180px; margin-bottom: 14px; }
@@ -214,9 +214,20 @@
         <button onclick="changeGraphMonth(1)" style="background:none; border:none; font-size:18px; color:var(--primary-color); cursor:pointer; padding:4px 10px;">&#9654;</button>
       </div>
 
-	<div class="card" style="margin-bottom: 10px; padding: 12px; text-align: center;">
-        <div style="font-size: 11px; color: var(--text-sub); margin-bottom: 2px;">今月収支</div>
-        <div id="netBalanceVal" style="font-size: 18px; font-weight: bold; word-break: break-all;">¥0</div>
+      <!-- 月初資産・今月収支・月末資産カード（横並び） -->
+      <div class="summary-box">
+        <div class="summary-card">
+          <div class="label">月初資産</div>
+          <div class="value" id="startAssetsVal">¥0</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">今月収支</div>
+          <div class="value" id="netBalanceVal">¥0</div>
+        </div>
+        <div class="summary-card">
+          <div class="label">月末資産</div>
+          <div class="value" id="endAssetsVal">¥0</div>
+        </div>
       </div>
 
       <!-- 支出・収入切り替えカード -->
@@ -569,7 +580,7 @@
       renderDailyList(selectedDateStr);
     }
 
-function createCell(year, month, day, isOtherMonth, summaryMap) {
+    function createCell(year, month, day, isOtherMonth, summaryMap) {
       const d = new Date(year, month, day);
       const dateKey = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
 
@@ -655,231 +666,223 @@ function createCell(year, month, day, isOtherMonth, summaryMap) {
       listContainer.appendChild(ul);
     }
 
-function renderCategoryDetailView() {
-  document.getElementById('catViewTitle').innerText = `${catViewYear}年${catViewMonth + 1}月`;
-  const select = document.getElementById('targetCatSelect');
-  const contentContainer = document.getElementById('catDetailContent');
-  const headerEl = document.getElementById('catDetailHeader');
+    function renderCategoryDetailView() {
+      document.getElementById('catViewTitle').innerText = `${catViewYear}年${catViewMonth + 1}月`;
+      const select = document.getElementById('targetCatSelect');
+      const contentContainer = document.getElementById('catDetailContent');
+      const headerEl = document.getElementById('catDetailHeader');
 
-  const selectedCat = select.value;
-  if (!selectedCat) {
-    headerEl.innerText = '科目実績';
-    contentContainer.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding:10px;">科目が選択されていません</div>';
-    return;
-  }
-
-  headerEl.innerText = `「${selectedCat}」の実績 (${catViewYear}年${catViewMonth + 1}月)`;
-  contentContainer.innerHTML = '';
-
-  const isAsset = currentAssets.includes(selectedCat);
-  const isExpense = currentExpenses.includes(selectedCat);
-  const isIncome = currentIncomes.includes(selectedCat);
-  const isPnl = currentPnls.includes(selectedCat);
-
-  const targetDateEnd = new Date(catViewYear, catViewMonth + 1, 0);
-  const prevMonthEndDate = new Date(catViewYear, catViewMonth, 0);
-  const monthPrefix = `${catViewYear}/${String(catViewMonth + 1).padStart(2, '0')}`;
-
-  if (isAsset) {
-    let currentBalance = 0;
-    let prevBalance = 0;
-
-    allHistory.forEach(item => {
-      if (!item.date) return;
-      const parts = item.date.split('/');
-      if (parts.length !== 3) return;
-      const itemDate = new Date(parts[0], parts[1] - 1, parts[2]);
-
-      let diff = 0;
-      if (item.from === selectedCat) diff -= item.amount;
-      if (item.to === selectedCat) diff += item.amount;
-
-      if (itemDate <= targetDateEnd) currentBalance += diff;
-      if (itemDate <= prevMonthEndDate) prevBalance += diff;
-    });
-
-    const monthlyChange = currentBalance - prevBalance;
-    let changeClass = 'text-black';
-    let changePrefix = '';
-    if (monthlyChange > 0) {
-      changeClass = 'text-blue';
-      changePrefix = '+';
-    } else if (monthlyChange < 0) {
-      changeClass = 'text-red';
-    }
-
-    const summaryBox = document.createElement('div');
-    summaryBox.style.display = 'flex';
-    summaryBox.style.gap = '8px';
-    summaryBox.style.marginBottom = '14px';
-    summaryBox.style.width = '100%';
-    summaryBox.innerHTML = `
-      <div class="summary-card">
-        <div class="label">月初残高</div>
-        <div class="value">¥${prevBalance.toLocaleString()}</div>
-      </div>
-      <div class="summary-card">
-        <div class="label">先月比増減</div>
-        <div class="value ${changeClass}">${changePrefix}¥${monthlyChange.toLocaleString()}</div>
-      </div>
-      <div class="summary-card">
-        <div class="label">月末残高</div>
-        <div class="value">¥${currentBalance.toLocaleString()}</div>
-      </div>
-    `;
-    contentContainer.appendChild(summaryBox);
-    renderCatHistoryList(selectedCat, monthPrefix, contentContainer);
-
-  } else {
-    let monthTotal = 0;
-    const monthItems = allHistory.filter(item => {
-      if (!item.date || !item.date.startsWith(monthPrefix)) return false;
-      return item.from === selectedCat || item.to === selectedCat;
-    });
-
-    monthItems.forEach(item => {
-      if (isPnl) {
-        // 損益科目：右側に資産が来たらプラス（得）、左側に資産が来たらマイナス（損）
-        if (currentAssets.includes(item.to)) monthTotal += item.amount;
-        if (currentAssets.includes(item.from)) monthTotal -= item.amount;
-      } else if (isExpense) {
-        if (item.to === selectedCat) monthTotal += item.amount;
-        if (item.from === selectedCat) monthTotal -= item.amount;
-      } else if (isIncome) {
-        if (item.from === selectedCat) monthTotal += item.amount;
-        if (item.to === selectedCat) monthTotal -= item.amount;
+      const selectedCat = select.value;
+      if (!selectedCat) {
+        headerEl.innerText = '科目実績';
+        contentContainer.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding:10px;">科目が選択されていません</div>';
+        return;
       }
-    });
 
-    let colorClass = 'text-black';
-    let prefix = '';
+      headerEl.innerText = `「${selectedCat}」の実績 (${catViewYear}年${catViewMonth + 1}月)`;
+      contentContainer.innerHTML = '';
 
-    if (isExpense) {
-      // 支出科目の場合：支出が発生している（monthTotal > 0）場合は赤字マイナス表示
-      if (monthTotal > 0) {
-        colorClass = 'text-red';
-        prefix = '-';
-      } else if (monthTotal < 0) {
-        colorClass = 'text-blue';
-        prefix = '+';
-      }
-    } else {
-      // 収入科目・損益科目の場合：プラスなら青字、マイナスなら赤字
-      if (monthTotal > 0) {
-        colorClass = 'text-blue';
-        prefix = '+';
-      } else if (monthTotal < 0) {
-        colorClass = 'text-red';
-        prefix = '-';
-      }
-    }
+      const isAsset = currentAssets.includes(selectedCat);
+      const isExpense = currentExpenses.includes(selectedCat);
+      const isIncome = currentIncomes.includes(selectedCat);
+      const isPnl = currentPnls.includes(selectedCat);
 
-    let labelName = isExpense ? '今月支出合計' : (isPnl ? '今月清算合計' : '今月収入合計');
+      const targetDateEnd = new Date(catViewYear, catViewMonth + 1, 0);
+      const prevMonthEndDate = new Date(catViewYear, catViewMonth, 0);
+      const monthPrefix = `${catViewYear}/${String(catViewMonth + 1).padStart(2, '0')}`;
 
-    const summaryBox = document.createElement('div');
-    summaryBox.className = 'summary-card';
-    summaryBox.style.marginBottom = '14px';
-    summaryBox.innerHTML = `
-      <div class="label">${labelName}</div>
-      <div class="value ${colorClass}">${prefix}¥${Math.abs(monthTotal).toLocaleString()}</div>
-    `;
-    contentContainer.appendChild(summaryBox);
-    renderCatHistoryList(selectedCat, monthPrefix, contentContainer);
-  }
-}
+      if (isAsset) {
+        let currentBalance = 0;
+        let prevBalance = 0;
 
-function renderCatHistoryList(selectedCat, monthPrefix, container) {
-  const filtered = allHistory.filter(item => {
-    if (!item.date || !item.date.startsWith(monthPrefix)) return false;
-    return item.from === selectedCat || item.to === selectedCat;
-  });
+        allHistory.forEach(item => {
+          if (!item.date) return;
+          const parts = item.date.split('/');
+          if (parts.length !== 3) return;
+          const itemDate = new Date(parts[0], parts[1] - 1, parts[2]);
 
-  const title = document.createElement('div');
-  title.style.fontSize = '13px';
-  title.style.fontWeight = 'bold';
-  title.style.marginBottom = '8px';
-  title.innerText = '今月の関連明細';
-  container.appendChild(title);
+          let diff = 0;
+          if (item.from === selectedCat) diff -= item.amount;
+          if (item.to === selectedCat) diff += item.amount;
 
-  if (filtered.length === 0) {
-    const noneEl = document.createElement('div');
-    noneEl.style.cssText = 'text-align:center; color:var(--text-sub); padding:10px; font-size:12px;';
-    noneEl.innerText = 'この月の明細はありません';
-    container.appendChild(noneEl);
-    return;
-  }
+          if (itemDate <= targetDateEnd) currentBalance += diff;
+          if (itemDate <= prevMonthEndDate) prevBalance += diff;
+        });
 
-  // 選択科目の分類判定
-  const isAsset = currentAssets.includes(selectedCat);
-  const isExpense = currentExpenses.includes(selectedCat);
-  const isIncome = currentIncomes.includes(selectedCat);
-  const isPnl = currentPnls.includes(selectedCat);
+        const monthlyChange = currentBalance - prevBalance;
+        let changeClass = 'text-black';
+        let changePrefix = '';
+        if (monthlyChange > 0) {
+          changeClass = 'text-blue';
+          changePrefix = '+';
+        } else if (monthlyChange < 0) {
+          changeClass = 'text-red';
+        }
 
-  const ul = document.createElement('ul');
-  ul.className = 'daily-list';
+        const summaryBox = document.createElement('div');
+        summaryBox.style.display = 'flex';
+        summaryBox.style.gap = '8px';
+        summaryBox.style.marginBottom = '14px';
+        summaryBox.style.width = '100%';
+        summaryBox.innerHTML = `
+          <div class="summary-card">
+            <div class="label">月初残高</div>
+            <div class="value">¥${prevBalance.toLocaleString()}</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">先月比増減</div>
+            <div class="value ${changeClass}">${changePrefix}¥${monthlyChange.toLocaleString()}</div>
+          </div>
+          <div class="summary-card">
+            <div class="label">月末残高</div>
+            <div class="value">¥${currentBalance.toLocaleString()}</div>
+          </div>
+        `;
+        contentContainer.appendChild(summaryBox);
+        renderCatHistoryList(selectedCat, monthPrefix, contentContainer);
 
-  filtered.forEach(item => {
-    let amtStr = `¥${item.amount.toLocaleString()}`;
-    let amtColor = 'text-black';
-
-    if (item.from === selectedCat && item.to === selectedCat) {
-      amtStr = `¥${item.amount.toLocaleString()}`;
-      amtColor = 'text-black';
-    } else if (isAsset) {
-      // 資産科目：右（移動先）に来たらプラス、左（移動元）に来たらマイナス
-      if (item.to === selectedCat) {
-        amtStr = `+¥${item.amount.toLocaleString()}`;
-        amtColor = 'text-blue';
       } else {
-        amtStr = `-¥${item.amount.toLocaleString()}`;
-        amtColor = 'text-red';
-      }
-    } else if (isExpense) {
-      // 支出科目：右に来たら支出（マイナス・赤字）、左に来たら減少/戻り（プラス・青字）
-      if (item.to === selectedCat) {
-        amtStr = `-¥${item.amount.toLocaleString()}`;
-        amtColor = 'text-red';
-      } else {
-        amtStr = `+¥${item.amount.toLocaleString()}`;
-        amtColor = 'text-blue';
-      }
-    } else if (isIncome) {
-      // 収入科目：左に来たら収入（プラス・青字）、右に来たら減少/取り消し（マイナス・赤字）
-      if (item.from === selectedCat) {
-        amtStr = `+¥${item.amount.toLocaleString()}`;
-        amtColor = 'text-blue';
-      } else {
-        amtStr = `-¥${item.amount.toLocaleString()}`;
-        amtColor = 'text-red';
-      }
-    } else if (isPnl) {
-      // 損益科目：左に来たら益/収入（プラス・青字）、右に来たら損/支出（マイナス・赤字）
-      if (item.from === selectedCat) {
-        amtStr = `+¥${item.amount.toLocaleString()}`;
-        amtColor = 'text-blue';
-      } else {
-        amtStr = `-¥${item.amount.toLocaleString()}`;
-        amtColor = 'text-red';
+        let monthTotal = 0;
+        const monthItems = allHistory.filter(item => {
+          if (!item.date || !item.date.startsWith(monthPrefix)) return false;
+          return item.from === selectedCat || item.to === selectedCat;
+        });
+
+        monthItems.forEach(item => {
+          if (isPnl) {
+            if (currentAssets.includes(item.to)) monthTotal += item.amount;
+            if (currentAssets.includes(item.from)) monthTotal -= item.amount;
+          } else if (isExpense) {
+            if (item.to === selectedCat) monthTotal += item.amount;
+            if (item.from === selectedCat) monthTotal -= item.amount;
+          } else if (isIncome) {
+            if (item.from === selectedCat) monthTotal += item.amount;
+            if (item.to === selectedCat) monthTotal -= item.amount;
+          }
+        });
+
+        let colorClass = 'text-black';
+        let prefix = '';
+
+        if (isExpense) {
+          if (monthTotal > 0) {
+            colorClass = 'text-red';
+            prefix = '-';
+          } else if (monthTotal < 0) {
+            colorClass = 'text-blue';
+            prefix = '+';
+          }
+        } else {
+          if (monthTotal > 0) {
+            colorClass = 'text-blue';
+            prefix = '+';
+          } else if (monthTotal < 0) {
+            colorClass = 'text-red';
+            prefix = '-';
+          }
+        }
+
+        let labelName = isExpense ? '今月支出合計' : (isPnl ? '今月清算合計' : '今月収入合計');
+
+        const summaryBox = document.createElement('div');
+        summaryBox.className = 'summary-card';
+        summaryBox.style.marginBottom = '14px';
+        summaryBox.innerHTML = `
+          <div class="label">${labelName}</div>
+          <div class="value ${colorClass}">${prefix}¥${Math.abs(monthTotal).toLocaleString()}</div>
+        `;
+        contentContainer.appendChild(summaryBox);
+        renderCatHistoryList(selectedCat, monthPrefix, contentContainer);
       }
     }
 
-    const li = document.createElement('li');
-    li.className = 'daily-item';
-    li.innerHTML = `
-      <div style="min-width:0; flex:1; padding-right:6px;">
-        <div style="font-weight:bold; font-size:12px; word-break:break-all;">${item.date} : ${item.from} ➔ ${item.to}</div>
-        <div style="font-size:11px; color:var(--text-sub); word-break:break-all;">${item.memo || 'メモなし'}</div>
-      </div>
-      <div style="font-weight:bold; font-size:13px; white-space:nowrap;" class="${amtColor}">${amtStr}</div>
-    `;
-    ul.appendChild(li);
-  });
-  container.appendChild(ul);
-}
+    function renderCatHistoryList(selectedCat, monthPrefix, container) {
+      const filtered = allHistory.filter(item => {
+        if (!item.date || !item.date.startsWith(monthPrefix)) return false;
+        return item.from === selectedCat || item.to === selectedCat;
+      });
+
+      const title = document.createElement('div');
+      title.style.fontSize = '13px';
+      title.style.fontWeight = 'bold';
+      title.style.marginBottom = '8px';
+      title.innerText = '今月の関連明細';
+      container.appendChild(title);
+
+      if (filtered.length === 0) {
+        const noneEl = document.createElement('div');
+        noneEl.style.cssText = 'text-align:center; color:var(--text-sub); padding:10px; font-size:12px;';
+        noneEl.innerText = 'この月の明細はありません';
+        container.appendChild(noneEl);
+        return;
+      }
+
+      const isAsset = currentAssets.includes(selectedCat);
+      const isExpense = currentExpenses.includes(selectedCat);
+      const isIncome = currentIncomes.includes(selectedCat);
+      const isPnl = currentPnls.includes(selectedCat);
+
+      const ul = document.createElement('ul');
+      ul.className = 'daily-list';
+
+      filtered.forEach(item => {
+        let amtStr = `¥${item.amount.toLocaleString()}`;
+        let amtColor = 'text-black';
+
+        if (item.from === selectedCat && item.to === selectedCat) {
+          amtStr = `¥${item.amount.toLocaleString()}`;
+          amtColor = 'text-black';
+        } else if (isAsset) {
+          if (item.to === selectedCat) {
+            amtStr = `+¥${item.amount.toLocaleString()}`;
+            amtColor = 'text-blue';
+          } else {
+            amtStr = `-¥${item.amount.toLocaleString()}`;
+            amtColor = 'text-red';
+          }
+        } else if (isExpense) {
+          if (item.to === selectedCat) {
+            amtStr = `-¥${item.amount.toLocaleString()}`;
+            amtColor = 'text-red';
+          } else {
+            amtStr = `+¥${item.amount.toLocaleString()}`;
+            amtColor = 'text-blue';
+          }
+        } else if (isIncome) {
+          if (item.from === selectedCat) {
+            amtStr = `+¥${item.amount.toLocaleString()}`;
+            amtColor = 'text-blue';
+          } else {
+            amtStr = `-¥${item.amount.toLocaleString()}`;
+            amtColor = 'text-red';
+          }
+        } else if (isPnl) {
+          if (item.from === selectedCat) {
+            amtStr = `+¥${item.amount.toLocaleString()}`;
+            amtColor = 'text-blue';
+          } else {
+            amtStr = `-¥${item.amount.toLocaleString()}`;
+            amtColor = 'text-red';
+          }
+        }
+
+        const li = document.createElement('li');
+        li.className = 'daily-item';
+        li.innerHTML = `
+          <div style="min-width:0; flex:1; padding-right:6px;">
+            <div style="font-weight:bold; font-size:12px; word-break:break-all;">${item.date} : ${item.from} ➔ ${item.to}</div>
+            <div style="font-size:11px; color:var(--text-sub); word-break:break-all;">${item.memo || 'メモなし'}</div>
+          </div>
+          <div style="font-weight:bold; font-size:13px; white-space:nowrap;" class="${amtColor}">${amtStr}</div>
+        `;
+        ul.appendChild(li);
+      });
+      container.appendChild(ul);
+    }
 
     const palette = ['#7c73e6', '#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5', '#dd6b20', '#00b5d8', '#718096'];
 
-function renderGraphs() {
+    function renderGraphs() {
       document.getElementById('graphTitle').innerText = `${graphYear}年${graphMonth + 1}月`;
 
       const monthPrefix = `${graphYear}/${String(graphMonth + 1).padStart(2, '0')}`;
@@ -912,7 +915,7 @@ function renderGraphs() {
           incomeMap[item.to] = (incomeMap[item.to] || 0) - item.amount;
         }
 
-        // 3. 損益科目（資産が右＝プラス/得、資産が左＝マイナス/損）
+        // 3. 損益科目
         if (isToPnl && currentAssets.includes(item.from)) {
           pnlNetMap[item.to] = (pnlNetMap[item.to] || 0) - item.amount;
         }
@@ -940,20 +943,51 @@ function renderGraphs() {
       document.getElementById('totalExpenseVal').innerText = `¥${totalExpense.toLocaleString()}`;
       document.getElementById('totalIncomeVal').innerText = `¥${totalIncome.toLocaleString()}`;
 
-      // --- 今月収支の計算・表示処理 ---
+      // --- 今月収支の計算・表示 ---
       const netBalance = totalIncome - totalExpense;
       const netEl = document.getElementById('netBalanceVal');
 
       if (netBalance > 0) {
-        netEl.className = 'text-blue';
+        netEl.className = 'value text-blue';
         netEl.innerText = `+¥${netBalance.toLocaleString()}`;
       } else if (netBalance < 0) {
-        netEl.className = 'text-red';
+        netEl.className = 'value text-red';
         netEl.innerText = `-¥${Math.abs(netBalance).toLocaleString()}`;
       } else {
-        netEl.className = 'text-black';
+        netEl.className = 'value text-black';
         netEl.innerText = `¥0`;
       }
+
+      // --- 月初資産・月末資産の計算・表示 ---
+      const targetDateEnd = new Date(graphYear, graphMonth + 1, 0);
+      const prevMonthEndDate = new Date(graphYear, graphMonth, 0);
+
+      let startAssetsTotal = 0;
+      let endAssetsTotal = 0;
+
+      allHistory.forEach(item => {
+        if (!item.date) return;
+        const parts = item.date.split('/');
+        if (parts.length !== 3) return;
+        const itemDate = new Date(parts[0], parts[1] - 1, parts[2]);
+
+        const isFromAsset = currentAssets.includes(item.from);
+        const isToAsset = currentAssets.includes(item.to);
+
+        let diff = 0;
+        if (isFromAsset && !isToAsset) diff -= item.amount;
+        else if (!isFromAsset && isToAsset) diff += item.amount;
+
+        if (itemDate <= prevMonthEndDate) {
+          startAssetsTotal += diff;
+        }
+        if (itemDate <= targetDateEnd) {
+          endAssetsTotal += diff;
+        }
+      });
+
+      document.getElementById('startAssetsVal').innerText = `¥${startAssetsTotal.toLocaleString()}`;
+      document.getElementById('endAssetsVal').innerText = `¥${endAssetsTotal.toLocaleString()}`;
 
       drawPieChart('expenseCanvas', 'expenseLegend', expenseMap);
       drawPieChart('incomeCanvas', 'incomeLegend', incomeMap);
