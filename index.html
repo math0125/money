@@ -569,7 +569,7 @@
       renderDailyList(selectedDateStr);
     }
 
-    function createCell(year, month, day, isOtherMonth, summaryMap) {
+function createCell(year, month, day, isOtherMonth, summaryMap) {
       const d = new Date(year, month, day);
       const dateKey = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
 
@@ -588,10 +588,10 @@
       let summaryHtml = '';
       if (summary) {
         if (summary.increase > 0) {
-          summaryHtml += `<div class="cal-cell-summary text-blue">+${summary.increase.toLocaleString()}</div>`;
+          summaryHtml += `<div class="cal-cell-summary text-blue">${summary.increase.toLocaleString()}</div>`;
         }
         if (summary.decrease > 0) {
-          summaryHtml += `<div class="cal-cell-summary text-red">-${summary.decrease.toLocaleString()}</div>`;
+          summaryHtml += `<div class="cal-cell-summary text-red">${summary.decrease.toLocaleString()}</div>`;
         }
       }
 
